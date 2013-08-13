@@ -16,8 +16,7 @@ if($name =~ /_(5m|24h|sec)$/)
 {
        	$period = $1;
 } else {
-       	print "please link to this file using _5m, _24h or _sec postfix\n";
-       	exit 1;
+	$period = "5m";
 }
 
 sub parse_mdiag()
