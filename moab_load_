@@ -5,17 +5,24 @@
 use strict;
 use File::Basename;
 
-my ($line,$period);
-
 my $arg = shift;
 my $cont = 0;
 my $mdiag = "/opt/moab/bin/mdiag";
 my $mdiag_flags = "-S";
 my $name = basename($0);
+my $period;
+
+if($name =~ /_(5m|24h|sec)$/)
+{
+       	$period = $1;
+} else {
+       	print "please link to this file using _5m, _24h or _sec postfix\n";
+       	exit 1;
+}
 
 sub parse_mdiag()
 {
-	my %load;
+	my (%load,$line);
 
         open(my $mdiag_fh, "$mdiag $mdiag_flags |") or die $!;
 
@@ -52,14 +59,6 @@ sub parse_mdiag()
                 $load{lc($key)} = $val;
         }
 	return %load;
-}
-
-if($name =~ /_(5m|24h|sec)$/)
-{
-        $period = $1;
-} else {
-        print "please link to this file using _5m, _24h or _sec postfix\n";
-        exit 1;
 }
 
 if($arg)
