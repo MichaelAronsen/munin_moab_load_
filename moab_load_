@@ -1,0 +1,103 @@
+#!/usr/bin/perl -w
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+use strict;
+use File::Basename;
+
+my ($line,$period);
+
+my $arg = shift;
+my $cont = 0;
+my $mdiag = "/opt/moab/bin/mdiag";
+my $mdiag_flags = "-S";
+my $name = basename($0);
+
+sub parse_mdiag()
+{
+	my %load;
+
+        open(my $mdiag_fh, "$mdiag $mdiag_flags |") or die $!;
+
+        while(<$mdiag_fh>)
+        {
+                if(/(Load|Time)\($period\)/)
+                {
+                        chomp;
+                        $line .= $_;
+                        $cont = 1;
+                        next;
+                }
+
+                if($cont == 1)
+                {
+                        chomp;
+                        $line .= $_;
+                        $cont = 0;
+                }
+        }
+
+        close($mdiag_fh) or die $!;
+
+        $line =~ s/%//g;
+        $line =~ s/\s+(Load|Time)\($period\)\s+//;
+        $line =~ s/\s\s+/\n/g;
+        $line =~ s/://g;
+
+        my @lines = split(/\n/, $line);
+
+        foreach my $l (@lines)
+        {
+                my ($key,$val) = split(/\s/, $l);
+                $load{lc($key)} = $val;
+        }
+	return %load;
+}
+
+if($name =~ /_(5m|24h|sec)$/)
+{
+        $period = $1;
+} else {
+        print "please link to this file using _5m, _24h or _sec postfix\n";
+        exit 1;
+}
+
+if($arg)
+{
+	for ($arg)
+	{
+		if(/^autoconf$/)
+		{
+		        if( -x $mdiag )
+        		{
+		                print "yes\n";
+		        } else {
+               			 print "no (no mdiag (or not executable by this user?) at: $mdiag)\n";
+        		}
+		}
+		elsif(/^suggest$/)
+		{
+			print "5m\n24h\nsec\n";
+		}
+		elsif(/^config$/)
+		{
+			my %load = parse_mdiag();
+        		print "graph_title Moab load statistics ($period)\n";
+        		print "graph_vlabel load\n";
+        		print "graph_category moab\n";
+        		foreach my $key (keys(%load))
+        		{
+                		print "${key}.label $key\n";
+                		print "${key}.type GAUGE\n";
+        		}
+		}
+	}
+} else {
+	my %load = parse_mdiag();
+	foreach my $key (keys(%load))
+	{
+		print "${key}.value $load{$key}\n"; 
+	}
+}
+
+0;
