@@ -70,7 +70,7 @@ if($arg)
         		{
 		                print "yes\n";
 		        } else {
-               			 print "no (no mdiag (or not executable by this user?) at: $mdiag)\n";
+               			 print "no (no mdiag or mdiag not executable by this user, path: $mdiag)\n";
         		}
 		}
 		elsif(/^suggest$/)
